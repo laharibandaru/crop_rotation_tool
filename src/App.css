@@ -1,0 +1,27 @@
+.mainBox{
+  border-radius : 5px;
+  width: 100%;
+  display:flex;
+}
+
+.interBox{
+    display:flex;
+    padding-left: 12px;
+    padding-right: 21px;
+    padding-bottom: 21px;
+    padding-top: 21px;
+    width: 100%;
+    height: 100%;
+}
+
+.navBox{
+    display:flex;
+    width:80%;
+}
+
+.toolBox{
+    display:flex;
+    width: 20%;
+    justify-content: flex-end;
+    height: 100%;
+}
