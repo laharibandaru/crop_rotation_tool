@@ -1,8 +1,34 @@
-import { MapContainer, TileLayer, GeoJSON, WMSTileLayer, useMap} from 'react-leaflet'
+import { MapContainer, TileLayer, GeoJSON, WMSTileLayer, useMap, Marker} from 'react-leaflet'
 import './Map.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import links from "../../resources/links.js"
 import colors from "../../resources/colors.js"
+import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
+
+function LeafletGeoSearch() {
+    const map = useMap();
+    useEffect(() => {
+        const georgia = '-85.60674924999249,30.35909162440624,-80.84375612136121,35.000591132701324'
+        const provider = new OpenStreetMapProvider({
+          params: {
+            viewbox: georgia, 
+            bounded: 1
+          },
+        });
+        const searchControl = new GeoSearchControl({
+            provider,
+            showMarker: false,
+            animateZoom: true,
+            searchLabel: 'search'
+        });
+        map.addControl(searchControl);
+        document.getElementById('search-container').appendChild(
+            document.querySelector(".geosearch")
+        );
+        return () => map.removeControl(searchControl);
+    }, [map]);
+    return null;
+}
 
 export function getGeoJSONFromS3(s3URL) {
     return fetch(s3URL)
@@ -16,6 +42,22 @@ function Map(props) {
   const initPos = [33, -83];
   const initZoom = 7;
   const [countyData, setCountyData] = useState(null);
+
+
+  // Popup settings
+  // const [popupData, setPopupData] = useState({});
+  // const markerRef = useRef(null);
+  // const [showFeedback, setShowFeedback] = useState(false);
+  // const [correctRot, setCorrectRot] = useState('');
+
+  // Function to handle showing/hiding the feedback form
+  // const handleFeedbackShow = (isFeedbackNeeded) => {
+  //     setShowFeedback(isFeedbackNeeded);
+  //     // If feedback is being hidden (user clicked 'Yes'), clear the input field
+  //     if (!isFeedbackNeeded) {
+  //         setCorrectRot('');
+  //     }
+  // };
 
   useEffect(() => {
     try{
@@ -31,7 +73,7 @@ function Map(props) {
   return (
     <div className = "map">
 
-        <MapContainer center={initPos} zoom={initZoom} scrollWheelZoom={true} zoomControl = {false}
+        <MapContainer center={initPos} zoom={initZoom} scrollWheelZoom={true} zoomControl = {true}
                       style={{ height:"100%", width: "100%", backgroundColor:"black",margin:"0px"}} >
 
 
@@ -65,6 +107,7 @@ function Map(props) {
             />
           }
                             
+          <LeafletGeoSearch />
         </MapContainer>
 
     </div>

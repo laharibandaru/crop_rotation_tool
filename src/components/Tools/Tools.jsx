@@ -38,7 +38,6 @@ const RoundIconButton = styled(IconButton)(({ theme }) => ({
     backgroundColor: colors.green
   }
   
-
 }))
 
 const getChildById = (children, id) => {
@@ -85,25 +84,6 @@ function Tools(props) {
               <KeyIcon />
             </Tooltip>
           </RoundToggleButton>
-
-        </Stack>
-
-
-        <Stack zIndex= {1} direction = "column" spacing= {2}>
-
-          <RoundIconButton>
-            <Tooltip title = "Zoom In">
-              <AddIcon />
-            </Tooltip>
-          </RoundIconButton>
-
-          <RoundIconButton>
-            <Tooltip title = "Zoom Out">
-              <RemoveIcon />
-            </Tooltip>
-          </RoundIconButton>
-
-          <div/>
 
         </Stack>
         
