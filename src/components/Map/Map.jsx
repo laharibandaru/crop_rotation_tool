@@ -1,9 +1,10 @@
-import { MapContainer, TileLayer, GeoJSON, WMSTileLayer, useMap, Marker} from 'react-leaflet'
+import { MapContainer, TileLayer, GeoJSON, WMSTileLayer, useMap, useMapEvents, Marker} from 'react-leaflet'
 import './Map.css';
 import { useEffect, useRef, useState } from 'react';
 import links from "../../resources/links.js"
 import colors from "../../resources/colors.js"
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
+import axios from 'axios';
 
 function LeafletGeoSearch() {
     const map = useMap();
@@ -43,21 +44,10 @@ function Map(props) {
   const initZoom = 7;
   const [countyData, setCountyData] = useState(null);
 
-
-  // Popup settings
-  // const [popupData, setPopupData] = useState({});
-  // const markerRef = useRef(null);
-  // const [showFeedback, setShowFeedback] = useState(false);
-  // const [correctRot, setCorrectRot] = useState('');
-
-  // Function to handle showing/hiding the feedback form
-  // const handleFeedbackShow = (isFeedbackNeeded) => {
-  //     setShowFeedback(isFeedbackNeeded);
-  //     // If feedback is being hidden (user clicked 'Yes'), clear the input field
-  //     if (!isFeedbackNeeded) {
-  //         setCorrectRot('');
-  //     }
-  // };
+  const [position, setPosition] = useState(initPos);
+  const [popupData, setPopupData] = useState({}); // Stores data for the popup
+  const [showPopup, setShowPopup] = useState(false); // Controls visibility of the popup content
+  const markerRef = useRef(null); // Ref for the Leaflet marker
 
   useEffect(() => {
     try{
@@ -69,6 +59,76 @@ function Map(props) {
       console.error("Error fetching county boundary data:", error);
     }
   }, []);
+
+  // Function to fetch field data based on clicked latitude and longitude
+    const getFieldData = (latlng) => {
+        console.log('Clicked LatLng:', latlng);
+        let config = {};
+        // Determine which Geoserver layer to query based on latitude
+        config = {
+            method: 'get',
+            url: `${links.geoserver}/geoserver/wfs?service=wfs&request=GetFeature&version=2.0.0&typeName=${links.rotationLayer}&outputformat=application/json&CQL_FILTER=CONTAINS(the_geom, Point(${latlng.lat} ${latlng.lng}))`,
+        };
+
+        axios.request(config)
+          .then((response) => {
+            let data = response.data;
+            console.log('Popup Data response: ', data);
+            let problty = null, rotat = null;
+
+            if (data.numberMatched === 1) { // If exactly one feature is matched
+                problty =+ data.features[0].properties.problty; // Convert to number
+                problty = Math.round(problty * 100) / 100; // Round to two decimal places
+                rotat = data.features[0].properties.rotat;
+                if (rotat === '0') { // Special handling for '0' rotation
+                    rotat = 'Other';
+                }
+                setPopupData({
+                    problty: problty,
+                    rotat: rotat,
+                    objectId: data.features[0].properties.OBJECTID
+                });
+                setShowPopup(true); // Show the popup
+            } else {
+                // If no field found, ensure popup is hidden and data is cleared
+                setShowPopup(false);
+                setPopupData({}); // Clear popup data
+            }
+          })
+          .catch((error) => {
+              console.log('Error fetching field data: ', error);
+              // In case of error, also ensure popup is hidden and data cleared
+              setShowPopup(false);
+              setPopupData({});
+          });
+    };
+
+
+    // Component to handle map interactions (clicks, location found)
+    function LocationMarker() {
+        const map = useMapEvents({
+            click(e) {
+                
+                // setShowFeedback(false); // Hide the feedback form
+                // setCorrectRot('');      // Clear the feedback input field
+
+                setShowPopup(false); // Temporarily hide the popup while fetching new data
+                setPosition(e.latlng); // Update marker position
+                getFieldData(e.latlng); // Fetch data for the new clicked location
+
+                // If a marker exists, try to open its popup.
+                // The popup content will be updated once getFieldData resolves.
+                let marker = markerRef.current;
+                if (marker) {
+                    marker.openPopup();
+                }
+            },
+            locationfound(e) {
+                map.flyTo(e.latlng, map.getZoom());
+            },
+        });
+        return null; // This component doesn't render any visible UI
+    }
 
   return (
     <div className = "map">
@@ -100,13 +160,14 @@ function Map(props) {
             props.showRotation && 
             <WMSTileLayer
                 layers={links.rotationLayer}
-                url={`${links.geoserver}`}
+                url={`${links.geoserver}/geoserver/wms`}
                 transparent={true}
                 format='image/png'
                 opacity={1}
             />
           }
-                            
+
+          <LocationMarker/>        
           <LeafletGeoSearch />
         </MapContainer>
 

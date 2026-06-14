@@ -10,7 +10,7 @@ function Legend() {
 
     useEffect(() => {
         try{
-            fetch(links.geoserver+"?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetLegendGraphic&FORMAT=application/json&LAYER="+links.rotationLayer).then(data => {
+            fetch(links.geoserver+"/geoserver/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetLegendGraphic&FORMAT=application/json&LAYER="+links.rotationLayer).then(data => {
                 data.json().then(response =>{
                     setLegendData(response.Legend[0].rules)
                 });
