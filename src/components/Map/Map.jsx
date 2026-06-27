@@ -79,9 +79,7 @@ function Map(props) {
 
   // Function to fetch field data based on clicked latitude and longitude
   const getFieldData = (latlng) => {
-      console.log('Clicked LatLng:', latlng);
       let config = {};
-      // Determine which Geoserver layer to query based on latitude
       config = {
           method: 'get',
           url: `${links.geoserver}/geoserver/wfs?service=wfs&request=GetFeature&version=2.0.0&typeName=${links.rotationLayer}&outputformat=application/json&CQL_FILTER=CONTAINS(the_geom, Point(${latlng.lat} ${latlng.lng}))`,
@@ -90,7 +88,6 @@ function Map(props) {
       axios.request(config)
         .then((response) => {
           let data = response.data;
-          console.log('Popup Data response: ', data);
           let problty = null, rotat = null;
 
           if (data.numberMatched === 1) { // If exactly one feature is matched
@@ -120,16 +117,14 @@ function Map(props) {
         });
   };
 
-
-  // Component to handle map interactions (clicks, location found)
   function LocationMarker() {
       const map = useMapEvents({
           click(e) {
-              setProposedRot('');      // Clear the feedback input field
+              setProposedRot('');
 
-              setShowPopup(false); // Temporarily hide the popup while fetching new data
-              setPosition(e.latlng); // Update marker position
-              getFieldData(e.latlng); // Fetch data for the new clicked location
+              setShowPopup(false);
+              setPosition(e.latlng);
+              getFieldData(e.latlng);
 
               // If a marker exists, try to open its popup.
               // The popup content will be updated once getFieldData resolves.
@@ -142,43 +137,24 @@ function Map(props) {
               map.flyTo(e.latlng, map.getZoom());
           },
       });
-      return null; // This component doesn't render any visible UI
+      return null; 
   }
 
-  // Function to handle submitting feedback to the Node.js server
-  const handleSubmitFeedback = () => {
-      console.log(proposedRot)
-      if (proposedRot === '') { // Validate that the input is not empty
-          return;
-      }
+  // Function to handle submitting feedback to the Render server
+  const handleSubmitFeedback = async() => {
+    try {
+        const response = await axios.post(`${links.renderServer}/add`, {
+        lat: position.lat,
+        long: position.lng,
+        proposed_rotation: proposedRot,
+    });
+        console.log('Success:', response.data);
+    } catch (error) {
+        console.error('Error:', error);
+    }
 
-      let url = '/crop-rotation/feedback';
-      let data = { ...popupData }; // Copy existing popup data
+    setProposedRot('');
 
-      axios.post(url, data, {
-          timeout: 5000})
-          .then(response => {
-              console.log('CR response : ', response);
-              setSnackbarMessage('Feedback has been successfully stored.');
-              setSnackbarSeverity('success');
-              setIsSnackbarOpen(true); // Show success snackbar
-              
-          })
-          .catch(error => {
-              console.log('CR Error : ', error);
-
-              if (axios.isCancel(error) || error.code === 'ECONNABORTED') {
-                  setSnackbarMessage('Feedback submission timed out. Please check your network or try again.');
-              } else {
-                  setSnackbarMessage('Failed to submit feedback. Please try again later.');
-              }
-
-              setSnackbarSeverity('error');
-              setIsSnackbarOpen(true);
-              // Optionally, show an error snackbar here if submission fails
-          });
-      setProposedRot('');
-      console.log(proposedRot)
   };
 
   // Handler for closing the Snackbar
