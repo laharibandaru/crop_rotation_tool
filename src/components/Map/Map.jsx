@@ -142,16 +142,26 @@ function Map(props) {
 
   // Function to handle submitting feedback to the Render server
   const handleSubmitFeedback = async() => {
-    try {
-        const response = await axios.post(`${links.renderServer}/add`, {
+    axios.post(`${links.renderServer}/add`, {
         lat: position.lat,
         long: position.lng,
-        proposed_rotation: proposedRot,
-    });
-        console.log('Success:', response.data);
-    } catch (error) {
-        console.error('Error:', error);
-    }
+        proposed_rotation: proposedRot}, 
+        {timeout:5000})
+        .then(response => {
+            setSnackbarMessage('Feedback has been successfully stored.');
+            setSnackbarSeverity('success');
+            setIsSnackbarOpen(true);
+        })
+        .catch(error => {
+            if (axios.isCancel(error) || error.code === 'ECONNABORTED'){
+                setSnackbarMessage('Feedback submission timed out. Please check your network or try again. ');
+            } else{
+                setSnackbarMessage('Failed to submit feedback. Please try again later.');
+            }
+
+            setSnackbarSeverity('error');
+            setIsSnackbarOpen(true);
+        });
 
     setProposedRot('');
 
