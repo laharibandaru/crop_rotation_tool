@@ -6,8 +6,7 @@ import colors from "../../resources/colors.js"
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import axios from 'axios';
 import {Stack, Button, TextField, Alert, Snackbar} from '@mui/material';
-import markerIconPng from "leaflet/dist/images/marker-icon.png"
-import {Icon, divIcon} from 'leaflet'
+import {divIcon} from 'leaflet'
 
 
 function LeafletGeoSearch() {
@@ -35,12 +34,13 @@ function LeafletGeoSearch() {
     return null;
 }
 
-export function getGeoJSONFromS3(s3URL) {
-    return fetch(s3URL)
-        .then(response => response.json())
-        .catch(error => {
-            console.error("Error while fetching GeoJSON from S3: " + JSON.stringify(error));
-        });
+export async function getGeoJSONFromS3(s3URL) {
+    try {
+    const response = await fetch(s3URL);
+    return await response.json();
+  } catch (error) {
+    console.error("Error while fetching GeoJSON from S3: " + JSON.stringify(error));
+  }
 }
 
 function Map(props) {

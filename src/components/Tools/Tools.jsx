@@ -1,12 +1,9 @@
 import { useState, Children } from 'react';
-import {Stack, ToggleButton,  IconButton, Tooltip} from '@mui/material';
+import {Stack, ToggleButton, Tooltip} from '@mui/material';
 import LayersIcon from '@mui/icons-material/Layers';
 import KeyIcon from '@mui/icons-material/Key';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
 import { styled } from '@mui/material/styles';
 import colors from "../../resources/colors.js";
-import './Tools.css';
 
 const RoundToggleButton = styled(ToggleButton)(({ theme }) => ({
   color: '#000000',
@@ -24,20 +21,6 @@ const RoundToggleButton = styled(ToggleButton)(({ theme }) => ({
     borderColor: '#000000',
   }
 
-}))
-
-const RoundIconButton = styled(IconButton)(({ theme }) => ({
-  color: '#000000',
-  backgroundColor: colors.offWhite,
-  padding: theme.spacing(2),
-  border: '4px solid',
-  borderColor: '#000000',
-  borderRadius: 50,
-  "&.Mui-selected, &.Mui-selected:hover, &:hover": {
-    color: '#000000',
-    backgroundColor: colors.green
-  }
-  
 }))
 
 const getChildById = (children, id) => {
