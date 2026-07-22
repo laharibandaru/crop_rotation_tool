@@ -20,7 +20,7 @@ function Legend() {
         }
     };
     fetchLegend();
-}, [links.refLayer, links.refStyle]);
+}, []);
     
   return (
     <div className = "legend">

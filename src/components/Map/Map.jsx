@@ -1,8 +1,7 @@
-import { MapContainer, TileLayer, GeoJSON, WMSTileLayer, useMap, useMapEvents, Marker, Popup} from 'react-leaflet'
+import { MapContainer, TileLayer, WMSTileLayer, useMap, useMapEvents, Marker, Popup} from 'react-leaflet'
 import './Map.css';
 import { useEffect, useRef, useState } from 'react';
 import links from "../../resources/links.js"
-import colors from "../../resources/colors.js"
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import axios from 'axios';
 import {Stack, Button, TextField, Alert, Snackbar, Autocomplete} from '@mui/material';
