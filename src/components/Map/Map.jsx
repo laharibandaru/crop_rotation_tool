@@ -5,17 +5,17 @@ import links from "../../resources/links.js"
 import colors from "../../resources/colors.js"
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import axios from 'axios';
-import {Stack, Button, TextField, Alert, Snackbar} from '@mui/material';
+import {Stack, Button, TextField, Alert, Snackbar, Autocomplete} from '@mui/material';
 import {divIcon} from 'leaflet'
 
 
 function LeafletGeoSearch() {
     const map = useMap();
     useEffect(() => {
-        const georgia = '-85.60674924999249,30.35909162440624,-80.84375612136121,35.000591132701324'
+        const usa = '-124.77, 24.52, -66.95, 49.38'
         const provider = new OpenStreetMapProvider({
           params: {
-            viewbox: georgia, 
+            viewbox: usa, 
             bounded: 1
           },
         });
@@ -44,9 +44,9 @@ export async function getGeoJSONFromS3(s3URL) {
 }
 
 function Map(props) {
-  const initPos = [33, -83];
-  const initZoom = 7;
-  const [countyData, setCountyData] = useState(null);
+  const initPos = [40, -95.86];
+
+  const initZoom = 5;
 
   const [position, setPosition] = useState(initPos);
   const [popupData, setPopupData] = useState({}); // Stores data for the popup
@@ -59,6 +59,9 @@ function Map(props) {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
+  const [selectedHistoricYear, setSelectedHistoricYear] = useState(null);
+  const stringOptions = ['2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024'];
+
   var invisibleIcon = divIcon({
     className: 'hidden-marker', // Leave empty or style with CSS
     html: '', 
@@ -66,55 +69,85 @@ function Map(props) {
   });
 
 
-  useEffect(() => {
-    try{
-      getGeoJSONFromS3(links.counties).then(data => {
-          setCountyData(data['features']);
-      });
-      
-    }catch(error){
-      console.error("Error fetching county boundary data:", error);
-    }
-  }, []);
-
   // Function to fetch field data based on clicked latitude and longitude
   const getFieldData = (latlng) => {
-      let config = {};
-      config = {
+      let state_config = {};
+      state_config = {
           method: 'get',
-          url: `${links.geoserver}/geoserver/wfs?service=wfs&request=GetFeature&version=2.0.0&typeName=${links.rotationLayer}&outputformat=application/json&CQL_FILTER=CONTAINS(the_geom, Point(${latlng.lat} ${latlng.lng}))`,
+          url: `${links.geoserver}/geoserver/wfs?service=wfs&request=GetFeature&version=2.0.0&typeName=${links.states}&outputformat=application/json&CQL_FILTER=CONTAINS(the_geom, Point(${latlng.lat} ${latlng.lng}))`,
       };
 
-      axios.request(config)
+
+      axios.request(state_config)
         .then((response) => {
           let data = response.data;
-          let problty = null, rotat = null;
+          let curr_state = null;
 
           if (data.numberMatched === 1) { // If exactly one feature is matched
-              problty =+ data.features[0].properties.problty; // Convert to number
-              problty = Math.round(problty * 100) / 100; // Round to two decimal places
-              rotat = data.features[0].properties.rotat;
-              if (rotat === '0') { // Special handling for '0' rotation
-                  rotat = 'Other';
-              }
-              setPopupData({
-                  problty: problty,
-                  rotat: rotat,
-                  objectId: data.features[0].properties.OBJECTID
+            curr_state = data.features[0].properties.STATE_ABBR
+
+            let config = {};
+            config = {
+                method: 'get',
+                url: `${links.geoserver}/geoserver/wfs?service=wfs&request=GetFeature&version=2.0.0&typeName=${links.rotationLayer+curr_state}&outputformat=application/json&CQL_FILTER=CONTAINS(the_geom, Point(${latlng.lat} ${latlng.lng}))`,
+            };
+
+            axios.request(config)
+              .then((response) => {
+                let data2 = response.data;
+                let problty = null, rotat = null;
+                let historic ={2017:null, 2018:null, 2019:null, 2020: null, 2021:null, 2022:null, 2023:null, 2024:null};
+
+                if (data2.numberMatched === 1) { // If exactly one feature is matched
+                    problty =+ data2.features[0].properties.problty; // Convert to number
+                    problty = Math.round(problty * 100) / 100; // Round to two decimal places
+                    rotat = data2.features[0].properties.rotat;
+                    if (rotat === '0') { // Special handling for '0' rotation
+                        rotat = 'Other';
+                    }
+                    historic = {2017:data2.features[0].properties.CDL2017, 2018: data2.features[0].properties.CDL2018, 
+                      2019: data2.features[0].properties.CDL2019, 2020:data2.features[0].properties.CDL2020, 2021:data2.features[0].properties.CDL2021,
+                      2022:data2.features[0].properties.CDL2022, 2023:data2.features[0].properties.CDL2023, 2024:data2.features[0].properties.CDL2024
+                    }
+                    setPopupData({
+                        problty: problty,
+                        rotat: rotat,
+                        historic: historic,
+                        objectId: data2.features[0].properties.OBJECTID
+                    });
+                    setShowPopup(true); // Show the popup
+                } else {
+                    // If no field found, ensure popup is hidden and data is cleared
+                    setShowPopup(false);
+                    setPopupData({}); // Clear popup data
+                }
+              })
+              .catch((error1) => {
+                  console.log('Error fetching field data: ', error1);
+                  // In case of error, also ensure popup is hidden and data cleared
+                  setShowPopup(false);
+                  setPopupData({});
               });
-              setShowPopup(true); // Show the popup
+
+
+
+
+
+
+              
           } else {
               // If no field found, ensure popup is hidden and data is cleared
               setShowPopup(false);
               setPopupData({}); // Clear popup data
           }
         })
-        .catch((error) => {
-            console.log('Error fetching field data: ', error);
-            // In case of error, also ensure popup is hidden and data cleared
+        .catch((error2) => {
+            console.log('Error fetching field data: ', error2);
             setShowPopup(false);
             setPopupData({});
         });
+
+      
   };
 
   function LocationMarker() {
@@ -134,7 +167,6 @@ function Map(props) {
               }
           },
           locationfound(e) {
-              map.flyTo(e.latlng, map.getZoom());
           },
       });
       return null; 
@@ -189,27 +221,37 @@ function Map(props) {
 
           {
             props.showCounties &&
-            countyData !== null && <GeoJSON
-                style={{
-                  opacity: 1,
-                  fill : false,
-                  color: colors.offWhite,
-                  weight:1
-                  }}
-                key="ksok_geojson"
-                data={countyData}
-            />
-          }
-
-          {
-            props.showRotation && 
             <WMSTileLayer
-                layers={links.rotationLayer}
+                layers={links.counties}
                 url={`${links.geoserver}/geoserver/wms`}
                 transparent={true}
                 format='image/png'
                 opacity={1}
             />
+          }
+
+          {
+            props.showStates &&
+            <WMSTileLayer
+                layers={links.states}
+                url={`${links.geoserver}/geoserver/wms`}
+                transparent={true}
+                format='image/png'
+                opacity={1}
+            />
+          }
+          {
+            props.showRotation && links.stateList.map((state) => {
+              return (<WMSTileLayer
+                key = {state}
+                layers={links.rotationLayer+state}
+                url={`${links.geoserver}/geoserver/wms`}
+                transparent={true}
+                format='image/png'
+                opacity={1}
+              />)
+            })
+              
           }
 
 
@@ -222,15 +264,32 @@ function Map(props) {
                 {
                   // If showPopup is true AND popupData has content, show detailed info
                   showPopup && Object.keys(popupData).length > 0 ? (
-                    <Stack direction="column" alignContent="center" justifyContent="space-around" sx={{ width: '500px' }} gap={1}>
-                      <Stack direction="row" alignContent="center" justifyContent="center" gap={2}>
+                    <Stack direction="column">
+                      <Stack direction="row">
                         <p>Crop Rotation : </p>
                         <p>{popupData.rotat} </p>
                       </Stack>
 
-                      <Stack direction="row" alignContent="center" justifyContent="space-around" gap={2}>
+                      <Stack direction="row">
                         <p> Probability of Occurrence : </p>
                         <p>{popupData.problty}% </p>
+                      </Stack>
+
+                      <Stack direction="row">
+                        <p> Historic Data : </p>
+                        <Autocomplete
+                          options={stringOptions}
+                          onChange={(event, newValue) => {
+                            setSelectedHistoricYear(newValue);
+                          }}
+                          width = "100%"
+                          value={selectedHistoricYear}
+                          renderInput={(params) => <TextField {...params} label="Select Year" />}
+                        />
+                      </Stack>
+
+                      <Stack direction="row">
+                        <p>{links.rotationMapping[popupData.historic[parseInt(selectedHistoricYear,10)]]}</p>
                       </Stack>
 
                       {

@@ -9,16 +9,18 @@ function Legend() {
     const [legendInfo, setLegendData] = useState(null);
 
     useEffect(() => {
-        try{
-            fetch(links.geoserver+"/geoserver/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetLegendGraphic&FORMAT=application/json&LAYER="+links.rotationLayer).then(data => {
-                data.json().then(response =>{
-                    setLegendData(response.Legend[0].rules)
-                });
-                });
-        }catch(error){
+    const fetchLegend = async () => {
+        try {
+            const url = `${links.geoserver}/geoserver/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetLegendGraphic&FORMAT=application/json&LAYER=${links.refLayer}&STYLE=${links.refStyle}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            setLegendData(data.Legend[0].rules);
+        } catch (error) {
             console.error("Error fetching legend data:", error);
         }
-    }, []);
+    };
+    fetchLegend();
+}, [links.refLayer, links.refStyle]);
     
   return (
     <div className = "legend">
@@ -44,7 +46,7 @@ function Legend() {
 
                         return(
                             <div key = {index}>
-                            <Box sx={{backgroundColor: color , padding:"10px", height: "100px"}} >
+                            <Box sx={{backgroundColor: color , padding:"10px", height: "70px"}} >
                                 <h1 className = "keyTitle" style={{color:textColor}}>{rotation.name}</h1>
                                 <h1 className = "keyHTML" style={{color:textColor}}>{color}</h1>
                             </Box>

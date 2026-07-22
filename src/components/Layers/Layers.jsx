@@ -41,6 +41,15 @@ function Layers(props) {
 
                 <Stack direction = "row" alignItems="center">
                     <StarCheck icon={<StarBorderIcon />} checkedIcon={<StarIcon />} 
+                    checked={props.showStates}
+                    onChange={e => {
+                        props.setShowStates(e.target.checked);
+                    }}/>
+                    <h1 className = "layersTitle">State Boundaries</h1>
+                </Stack>
+
+                <Stack direction = "row" alignItems="center">
+                    <StarCheck icon={<StarBorderIcon />} checkedIcon={<StarIcon />} 
                     checked={props.showCounties}
                     onChange={e => {
                         props.setShowCounties(e.target.checked);
