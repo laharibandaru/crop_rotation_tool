@@ -150,7 +150,7 @@ function Map(props) {
   };
 
   function LocationMarker() {
-      const map = useMapEvents({
+      useMapEvents({
           click(e) {
               setProposedRot('');
 
