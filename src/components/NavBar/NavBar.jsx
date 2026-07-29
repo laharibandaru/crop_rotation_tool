@@ -26,7 +26,7 @@ export default function NavBar() {
 
         <Box style = {{width:"100%"}} id="search-container"></Box>
 
-        <p/>
+        <p/>        
       </NavFill>
     </div>
   );

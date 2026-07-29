@@ -129,10 +129,6 @@ function Map(props) {
               });
 
 
-
-
-
-
               
           } else {
               // If no field found, ensure popup is hidden and data is cleared

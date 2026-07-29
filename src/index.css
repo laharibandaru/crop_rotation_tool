@@ -12,6 +12,12 @@ body {
   scrollbar-color: #1BAE81 #f6ecda;
 }
 
+a{
+  font-size: 14px;
+  font-style: normal;
+  text-decoration: none;
+}
+
 .montserrat-regular {
   font-family: "Montserrat", sans-serif;
   font-optical-sizing: auto;
