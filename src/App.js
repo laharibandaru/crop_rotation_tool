@@ -3,7 +3,7 @@ import { useState} from 'react';
 import NavBar from './components/NavBar/NavBar'
 import Map from './components/Map/Map'
 import Tools from './components/Tools/Tools'
-import {Stack, Typography} from '@mui/material';
+import {Stack} from '@mui/material';
 import Legend from './components/Legend/Legend';
 import Layers from './components/Layers/Layers';
 
